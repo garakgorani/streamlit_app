@@ -7,8 +7,6 @@ from wordcloud import WordCloud
 from collections import Counter
 
 # 한글 폰트 설정 (Streamlit Cloud 환경 고려)
-# 리눅스 기반 환경에서 기본 제공되는 나눔 또는 기타 한글 폰트가 없을 경우를 대비해 
-# 시스템 폰트 경로를 유연하게 잡거나 기본 폰트를 사용합니다.
 import matplotlib
 matplotlib.rcParams['font.family'] = 'sans-serif'
 matplotlib.rcParams['axes.unicode_minus'] = False
@@ -60,7 +58,6 @@ def get_youtube_comments(api_key, video_id, max_count):
 
 # 3. 간단한 텍스트 기반 감성 분석 (반응도 체크용 자작 사전)
 def analyze_sentiment(text):
-    # 실제 자연어 처리 모델 대신 가벼운 키워드 매칭 방식을 사용합니다.
     pos_words = ['좋다', '좋아', '최고', '대박', '유익', '재밌', '감사', '짱', '추천', '굳', 'good', 'love']
     neg_words = ['별로', '실망', '노잼', '최악', '아쉽', '불편', '나쁨', '지루', '싫어']
     
@@ -113,9 +110,9 @@ if st.sidebar.button("분석 시작"):
                     st.subheader("📈 분석 결과 요약")
                     st.success(f"총 {len(df)}개의 댓글을 성공적으로 분석했습니다.")
                     
-                    # 1. 시간대별 댓글 작성 추이
+                    # 1. 시간대별 댓글 작성 추이 (오류 수정 반영: 한국 시간대 변환 및 소문자 'h' 적용)
                     st.write("#### 🕒 시간대별 댓글 작성 추이")
-                    df['date_hour'] = df['published_at'].dt.to_period('H').dt.to_timestamp()
+                    df['date_hour'] = df['published_at'].dt.tz_convert('Asia/Seoul').dt.tz_localize(None).dt.to_period('h').dt.to_timestamp()
                     timeline = df.groupby('date_hour').size().reset_index(name='댓글 수')
                     st.line_chart(timeline.set_index('date_hour'))
                     
@@ -139,12 +136,12 @@ if st.sidebar.button("분석 시작"):
                     if filtered_words:
                         word_counts = Counter(filtered_words)
                         
-                        # 워드클라우드 생성 (폰트 경로 생략 시 시스템 기본 폰트 사용)
+                        # 워드클라우드 생성
                         wc = WordCloud(
                             background_color="white",
                             width=800,
                             height=400,
-                            font_path=None  # 리눅스 환경 대응을 위해 None 혹은 설치된 폰트 지정 가능
+                            font_path=None  # 리눅스 환경 대응을 위해 시스템 기본 폰트 사용
                         ).generate_from_frequencies(word_counts)
                         
                         fig, ax = plt.subplots(figsize=(10, 5))
